@@ -302,30 +302,30 @@ class Person(Scraper):
                     credential_id = None
                     
                 cert_extra_text = cert_details_list[1] if len(cert_details_list) > 1 else None
-            skill_element = cert_extra_text.find_element(By.CSS_SELECTOR, "li.pvs-list__item--with-top-padding") if cert_extra_text else None
-            if skill_element:
-                skills_text = skill_element.find_element(By.XPATH, ".//span[@aria-hidden='true']").text
-                skills_text_clean = skills_text.replace("Skills: ", "")
-            else: 
-                skills_text_clean = None
-            
+                skill_element = cert_extra_text.find_element(By.CSS_SELECTOR, "li.pvs-list__item--with-top-padding") if cert_extra_text else None
+                if skill_element:
+                    skills_text = skill_element.find_element(By.XPATH, ".//span[@aria-hidden='true']").text
+                    skills_text_clean = skills_text.replace("Skills: ", "")
+                else: 
+                    skills_text_clean = None
+                
 
 
 
-            certification = Certification(
-                issued_date=issued_date,
-                expired_date=expired_date,
-                skills=skills_text_clean,
-                cert_name=cert_name,
-                credential_id=credential_id,
-                credential_url=credential_url,
-                institution_name=institution_name,
-                linkedin_url=cert_linkedin_url
-            )
-            self.add_certification(certification)
-        except (NoSuchElementException, IndexError) as e:
-            print(f"Error processing certification: {e}")
-            continuer
+                certification = Certification(
+                    issued_date=issued_date,
+                    expired_date=expired_date,
+                    skills=skills_text_clean,
+                    cert_name=cert_name,
+                    credential_id=credential_id,
+                    credential_url=credential_url,
+                    institution_name=institution_name,
+                    linkedin_url=cert_linkedin_url
+                )
+                self.add_certification(certification)
+            except (NoSuchElementException, IndexError) as e:
+                print(f"Error processing certification: {e}")
+                continuer
 
 
     def get_educations(self):
