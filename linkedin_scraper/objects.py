@@ -39,6 +39,14 @@ class Experience(Institution):
     duration: str = None
     location: str = None
 
+@dataclass
+class Certification(Institution):
+    credential_id: str = None
+    credential_url: str = None
+    cert_name: str = None
+    skills: str = None
+    issued_date: str = None
+    expired_date: str = None
 
 @dataclass
 class Education(Institution):

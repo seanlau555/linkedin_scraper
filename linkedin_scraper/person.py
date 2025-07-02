@@ -1,12 +1,16 @@
+import os
+
 import requests
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
-from .objects import Experience, Education, Scraper, Interest, Accomplishment, Contact
-import os
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 from linkedin_scraper import selectors
+
+from .objects import (Accomplishment, Contact, Education, Experience, Interest,
+                      Scraper)
 
 
 class Person(Scraper):
@@ -21,6 +25,7 @@ class Person(Scraper):
         about=None,
         experiences=None,
         educations=None,
+        certifications=None,
         interests=None,
         accomplishments=None,
         company=None,
@@ -37,6 +42,7 @@ class Person(Scraper):
         self.about = about or []
         self.experiences = experiences or []
         self.educations = educations or []
+        self.certifications = certifications or []
         self.interests = interests or []
         self.accomplishments = accomplishments or []
         self.also_viewed_urls = []
@@ -72,6 +78,9 @@ class Person(Scraper):
     def add_education(self, education):
         self.educations.append(education)
 
+    def add_certification(self, cert):
+        self.certifications.append(cert)
+
     def add_interest(self, interest):
         self.interests.append(interest)
 
@@ -105,6 +114,9 @@ class Person(Scraper):
             return "#OPEN_TO_WORK" in self.driver.find_element(By.CLASS_NAME,"pv-top-card-profile-picture").find_element(By.TAG_NAME,"img").get_attribute("title")
         except:
             return False
+
+
+    
 
     def get_experiences(self):
         url = os.path.join(self.linkedin_url, "details/experience")
@@ -240,6 +252,81 @@ class Person(Scraper):
                     linkedin_url=company_linkedin_url
                 )
                 self.add_experience(experience)
+
+    def get_certifications(self):
+        url = os.path.join(self.linkedin_url, "details/certifications")
+        self.driver.get(url)
+        self.focus()
+        main = wait_for_element_to_load(by=By.TAG_NAME, name="main")
+        self.scroll_to_half()
+        self.scroll_to_bottom()
+        main_list = self.wait_for_element_to_load(name="pvs-list__container", base=main)
+        for position in main_list.find_elements(By.CLASS_NAME, "pvs-list__paged-list-item"):
+            try: 
+                position = position.find_element(By.CSS_SELECTOR, "div[data-view-name='profile-component-entity']")
+                cert_logo_elem, cert_details = position.find_elements(By.XPATH, "*")
+                
+                # company elem
+                cert_linkedin_url = cert_logo_elem.find_element(By.XPATH,"*").get_attribute("href")
+
+                # cert details
+                cert_details_list = cert_details.find_elements(By.XPATH,"*")
+                first_a_tag = cert_details.find_element(By.TAG_NAME, "a")
+                credential_url = first_a_tag.get_attribute("href")
+                cert_summary_details = cert_details_list[0] if len(cert_details_list) > 0 else None
+                details = cert_summary_details.find_element(By.XPATH,"*").find_elements(By.XPATH,"*")
+                
+                cert_name = details[0].find_element(By.TAG_NAME,"span").text
+                if len(details) > 1:
+                    institution_name = details[1].find_element(By.TAG_NAME,"span").text
+                else:
+                    institution_name = None
+                    
+                if len(details) > 2:
+                    date_text = details[2].find_element(By.TAG_NAME,"span").text
+                    issued_date = ""
+                    expired_date = ""      
+                    for part in date_text.split("·"):
+                        part = part.strip()
+                        if part.startswith("Issued"):
+                            issued_date = part.replace("Issued", "").strip()
+                        elif part.startswith("Expires") or part.startswith("Expired"):
+                            expired_date = part.replace("Expires", "").replace("Expired", "").strip()
+                else:
+                    issued_date = None
+                    expired_date = None
+                    
+                if len(details) > 3:
+                    credential_id = details[3].find_element(By.TAG_NAME,"span").text
+                else:
+                    credential_id = None
+                    
+                cert_extra_text = cert_details_list[1] if len(cert_details_list) > 1 else None
+            skill_element = cert_extra_text.find_element(By.CSS_SELECTOR, "li.pvs-list__item--with-top-padding") if cert_extra_text else None
+            if skill_element:
+                skills_text = skill_element.find_element(By.XPATH, ".//span[@aria-hidden='true']").text
+                skills_text_clean = skills_text.replace("Skills: ", "")
+            else: 
+                skills_text_clean = None
+            
+
+
+
+            certification = Certification(
+                issued_date=issued_date,
+                expired_date=expired_date,
+                skills=skills_text_clean,
+                cert_name=cert_name,
+                credential_id=credential_id,
+                credential_url=credential_url,
+                institution_name=institution_name,
+                linkedin_url=cert_linkedin_url
+            )
+            self.add_certification(certification)
+        except (NoSuchElementException, IndexError) as e:
+            print(f"Error processing certification: {e}")
+            continuer
+
 
     def get_educations(self):
         url = os.path.join(self.linkedin_url, "details/education")
@@ -462,6 +549,7 @@ class Person(Scraper):
             about=self.about,
             exp=self.experiences,
             edu=self.educations,
+            cert=self.certifications,
             int=self.interests,
             acc=self.accomplishments,
             conn=self.contacts,
