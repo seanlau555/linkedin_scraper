@@ -543,6 +543,8 @@ class Person(Scraper):
         else:
             return None
 
+
+    @property
     def to_dict(self):
         return {
             "name": getattr(self, 'name', ''),
