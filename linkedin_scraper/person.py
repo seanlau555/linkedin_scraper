@@ -543,6 +543,19 @@ class Person(Scraper):
         else:
             return None
 
+    def to_dict(self):
+        return {
+            "name": getattr(self, 'name', ''),
+            "headline": getattr(self, 'headline', ''),
+            "about": getattr(self, 'about', []),
+            "experiences":  [asdict(exp) for exp in self.experiences] if self.experiences else [],
+            "certifications":  [asdict(cert) for cert in self.certifications] if self.certifications else [],
+            "educations":  [asdict(edu) for edu in self.educations] if self.educations else [],
+            "interests":  [asdict(int) for int in self.interests] if self.interests else [],
+            "accomplishments":  [asdict(acc) for acc in self.accomplishments] if self.accomplishments else [],
+            "contacts":  [asdict(contact) for contact in self.contacts] if self.contacts else [],
+        }
+
     def __repr__(self):
         return "<Person {name}\n\nAbout\n{about}\n\nExperience\n{exp}\n\nEducation\n{edu}\n\nInterest\n{int}\n\nAccomplishments\n{acc}\n\nContacts\n{conn}>".format(
             name=self.name,
