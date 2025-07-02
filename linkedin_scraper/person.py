@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from linkedin_scraper import selectors
 
-from .objects import (Accomplishment, Contact, Education, Experience, Interest,
+from .objects import (Accomplishment, Contact, Education, Certification, Experience, Interest,
                       Scraper)
 
 
@@ -444,6 +444,9 @@ class Person(Scraper):
 
         # get experience
         self.get_experiences()
+
+        # get certification
+        self.get_certifications()
 
         # get education
         self.get_educations()
