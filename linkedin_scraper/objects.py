@@ -31,6 +31,17 @@ class Institution:
 
 
 @dataclass
+class Skill:
+    name: str = None
+
+
+@dataclass
+class Language:
+    language: str = None
+    proficiency: str = None
+
+
+@dataclass
 class Experience(Institution):
     from_date: str = None
     to_date: str = None
@@ -38,6 +49,7 @@ class Experience(Institution):
     position_title: str = None
     duration: str = None
     location: str = None
+
 
 @dataclass
 class Certification(Institution):
@@ -47,6 +59,7 @@ class Certification(Institution):
     skills: str = None
     issued_date: str = None
     expired_date: str = None
+
 
 @dataclass
 class Education(Institution):
@@ -88,25 +101,16 @@ class Scraper:
     def wait_for_element_to_load(self, by=By.CLASS_NAME, name="pv-top-card", base=None):
         base = base or self.driver
         return WebDriverWait(base, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
-            EC.presence_of_element_located(
-                (
-                    by,
-                    name
-                )
-            )
+            EC.presence_of_element_located((by, name))
         )
 
-    def wait_for_all_elements_to_load(self, by=By.CLASS_NAME, name="pv-top-card", base=None):
+    def wait_for_all_elements_to_load(
+        self, by=By.CLASS_NAME, name="pv-top-card", base=None
+    ):
         base = base or self.driver
         return WebDriverWait(base, self.WAIT_FOR_ELEMENT_TIMEOUT).until(
-            EC.presence_of_all_elements_located(
-                (
-                    by,
-                    name
-                )
-            )
+            EC.presence_of_all_elements_located((by, name))
         )
-
 
     def is_signed_in(self):
         try:
@@ -131,11 +135,11 @@ class Scraper:
         )
 
     def scroll_to_bottom(self):
-        self.driver.execute_script(
-            "window.scrollTo(0, document.body.scrollHeight);"
-        )
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-    def scroll_class_name_element_to_page_percent(self, class_name:str, page_percent:float):
+    def scroll_class_name_element_to_page_percent(
+        self, class_name: str, page_percent: float
+    ):
         self.driver.execute_script(
             f'elem = document.getElementsByClassName("{class_name}")[0]; elem.scrollTo(0, elem.scrollHeight*{str(page_percent)});'
         )
@@ -150,7 +154,7 @@ class Scraper:
 
     def __find_element_by_xpath__(self, tag_name):
         try:
-            self.driver.find_element(By.XPATH,tag_name)
+            self.driver.find_element(By.XPATH, tag_name)
             return True
         except:
             pass
@@ -158,7 +162,7 @@ class Scraper:
 
     def __find_enabled_element_by_xpath__(self, tag_name):
         try:
-            elem = self.driver.find_element(By.XPATH,tag_name)
+            elem = self.driver.find_element(By.XPATH, tag_name)
             return elem.is_enabled()
         except:
             pass

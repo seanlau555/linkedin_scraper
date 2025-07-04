@@ -17,6 +17,8 @@ from .objects import (
     Experience,
     Interest,
     Scraper,
+    Skill,
+    Language,
 )
 
 
@@ -35,6 +37,8 @@ class Person(Scraper):
         certifications=None,
         interests=None,
         accomplishments=None,
+        skills=None,
+        languages=None,
         company=None,
         job_title=None,
         contacts=None,
@@ -52,6 +56,8 @@ class Person(Scraper):
         self.certifications = certifications or []
         self.interests = interests or []
         self.accomplishments = accomplishments or []
+        self.skills = skills or []
+        self.languages = languages or []
         self.also_viewed_urls = []
         self.contacts = contacts or []
 
@@ -93,6 +99,12 @@ class Person(Scraper):
 
     def add_accomplishment(self, accomplishment):
         self.accomplishments.append(accomplishment)
+
+    def add_skill(self, skill):
+        self.skills.append(skill)
+
+    def add_language(self, language):
+        self.languages.append(language)
 
     def add_location(self, location):
         self.location = location
@@ -595,6 +607,84 @@ class Person(Scraper):
         except:
             pass
 
+    def get_skills(self):
+        url = os.path.join(self.linkedin_url, "details/skills")
+
+        self.driver.get(url)
+        self.focus()
+        main = self.wait_for_element_to_load(by=By.TAG_NAME, name="main")
+        self.scroll_to_half()
+        self.scroll_to_bottom()
+        main_list = self.wait_for_element_to_load(name="pvs-list__container", base=main)
+        positions = main_list.find_elements(By.CLASS_NAME, "pvs-list__paged-list-item")
+        empty_sections = positions[0].find_elements(
+            By.XPATH, ".//section[contains(@class, 'artdeco-empty-state')]"
+        )
+        if empty_sections:
+            pass
+        else:
+            for position in positions:
+                try:
+                    item = position.find_elements(
+                        By.CSS_SELECTOR, ".artdeco-empty-state__headline"
+                    )
+                    if len(item) > 0:
+                        pass
+                    else:
+                        item = position.find_element(
+                            By.CSS_SELECTOR,
+                            "div[data-view-name='profile-component-entity']",
+                        )
+                        _, skill_element = item.find_elements(By.XPATH, "*")
+                        name = skill_element.find_element(By.CSS_SELECTOR, "span").text
+                        skill = Skill(name=name)
+                        self.add_skills(skill)
+                except (NoSuchElementException, IndexError) as e:
+                    print(f"Error processing certification: {e}")
+                    continue
+
+    def get_languages(self):
+        url = os.path.join(self.linkedin_url, "details/languages")
+
+        self.driver.get(url)
+        self.focus()
+        main = self.wait_for_element_to_load(by=By.TAG_NAME, name="main")
+        self.scroll_to_half()
+        self.scroll_to_bottom()
+        main_list = self.wait_for_element_to_load(name="pvs-list__container", base=main)
+        positions = main_list.find_elements(By.CLASS_NAME, "pvs-list__paged-list-item")
+        empty_sections = positions[0].find_elements(
+            By.XPATH, ".//section[contains(@class, 'artdeco-empty-state')]"
+        )
+        if empty_sections:
+            pass
+        else:
+            for position in positions:
+                try:
+                    item = position.find_elements(
+                        By.CSS_SELECTOR, ".artdeco-empty-state__headline"
+                    )
+                    if len(item) > 0:
+                        pass
+                    else:
+                        item = position.find_element(
+                            By.CSS_SELECTOR,
+                            "div[data-view-name='profile-component-entity']",
+                        )
+                        _, lang_element = item.find_elements(By.XPATH, "*")
+                        lang = lang_element.find_element(By.CSS_SELECTOR, "span").text
+                        proficiency_element = lang_element.find_elements(
+                            By.CLASS_NAME, "pvs-entity__caption-wrapper"
+                        )
+                        proficiency = None
+                        if len(proficiency_element) > 0:
+                            proficiency = proficiency_element[0].text
+                        lang = Language(language=lang, proficiency=proficiency)
+                        self.add_language(lang)
+                except (NoSuchElementException, IndexError) as e:
+                    print(f"Error processing certification: {e}")
+                    continue
+
     def get_interests(self):
         try:
             _ = WebDriverWait(self.driver, self.__WAIT_FOR_ELEMENT_TIMEOUT).until(
@@ -658,16 +748,20 @@ class Person(Scraper):
         # get education
         self.get_educations()
 
-        driver.get(self.linkedin_url)
+        self.get_skills()
 
-        # get interest
-        self.get_interests()
+        self.get_languages()
 
-        # get accomplishment
-        self.get_accomplishments()
+        # driver.get(self.linkedin_url)
 
-        # get connections
-        self.get_connections()
+        # # get interest
+        # self.get_interests()
+
+        # # get accomplishment
+        # self.get_accomplishments()
+
+        # # get connections
+        # self.get_connections()
 
         if close_on_complete:
             driver.quit()
@@ -725,13 +819,14 @@ class Person(Scraper):
         }
 
     def __repr__(self):
-        return "<Person {name}\n\nAbout\n{about}\n\nExperience\n{exp}\n\nEducation\n{edu}\n\nCertification\n{cert}\n\nInterest\n{int}\n\nAccomplishments\n{acc}\n\nContacts\n{conn}>".format(
+        return "<Person {name}\n\nAbout\n{about}\n\nExperience\n{exp}\n\nEducation\n{edu}\n\nCertification\n{cert}\n\nInterest\n{int}\n\Skills\n{skill}\n\nLanguages\n{lang}\n\nContacts\n{conn}>".format(
             name=self.name,
             about=self.about,
             exp=self.experiences,
             edu=self.educations,
             cert=self.certifications,
             int=self.interests,
-            acc=self.accomplishments,
+            skill=self.skills,
+            lang=self.languages,
             conn=self.contacts,
         )
